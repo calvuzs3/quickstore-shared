@@ -1,3 +1,4 @@
+import org.gradle.util.GradleVersion
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
 plugins {
@@ -6,7 +7,7 @@ plugins {
 }
 
 group = "net.calvuz"
-version = "0.1.4"
+version = "0.1.5"
 
 kotlin {
     jvm {
@@ -21,21 +22,28 @@ kotlin {
     // target e la compilazione dei klib (commonMain/jvm/ios*) restano verificabili,
     // non il link di un vero .framework nativo.
     //
-    // Niente `binaries.framework{}` per ora: con Kotlin Gradle Plugin 2.1.0 quel blocco
+    // `binaries.framework{}` con Kotlin Gradle Plugin 2.1.0 referenzia
+    // `DefaultArtifactPublicationSet`, un'API interna di Gradle rimossa in 9.x —
     // rompe il consumo di questo modulo da `quickstore-server` (composite build su
-    // Gradle 9.1.0, mentre QuickStore/quickstore-shared sono su 8.11.1 — un build
-    // composite esegue il modulo incluso con la versione di Gradle del progetto che lo
-    // include, non con il proprio wrapper) — errore
-    // `DefaultArtifactPublicationSet` non trovata, API interna di Gradle rimossa in
-    // 9.x che il code path di export framework di KGP 2.1.0 referenzia ancora. Da
-    // riprendere quando si affronta davvero l'app iOS: o si bumpa il Kotlin Gradle
-    // Plugin qui (rischio: le classi Kotlin generate potrebbero non essere più
-    // compatibili con QuickStore, che è fissato su Kotlin 2.1.0 — stesso vincolo già
-    // documentato per Ktor in CLAUDE.md), o si isola l'export framework in una
-    // configurazione che non venga valutata sotto Gradle 9.
-    iosX64()
-    iosArm64()
-    iosSimulatorArm64()
+    // Gradle 9.1.0, mentre QuickStore/quickstore-shared sono su 8.11.1: un build
+    // composite esegue il modulo incluso con la versione di Gradle del progetto che
+    // lo include, non col proprio wrapper). Isolato quindi dietro un check di
+    // versione: valutato solo quando la build gira su Gradle < 9 (questo modulo da
+    // solo, o incluso da QuickStore — entrambi su 8.11.1), saltato quando gira su
+    // Gradle 9 (incluso da quickstore-server). Il giorno in cui esisterà un vero
+    // progetto Xcode che consuma il .framework, girerà sempre con lo stesso Gradle
+    // 8.11.1 di questo modulo, quindi il check basta senza dover bumpare KGP (rischio
+    // di rottura ABI con QuickStore, fissato su Kotlin 2.1.0 — vedi nota Ktor in
+    // QuickStore/CLAUDE.md).
+    val exportFramework = GradleVersion.current() < GradleVersion.version("9.0")
+    listOf(iosX64(), iosArm64(), iosSimulatorArm64()).forEach { target ->
+        if (exportFramework) {
+            target.binaries.framework {
+                baseName = "QuickstoreShared"
+                isStatic = true
+            }
+        }
+    }
 
     sourceSets {
         commonMain.dependencies {
