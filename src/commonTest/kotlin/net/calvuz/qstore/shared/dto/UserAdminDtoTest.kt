@@ -28,4 +28,23 @@ class UserAdminDtoTest {
         val dto = UserDto(id = "user-1", email = "mario@example.com", displayName = null)
         assertEquals(dto, json.decodeFromString<UserDto>(json.encodeToString(dto)))
     }
+
+    @Test
+    fun updateUserRequest_roundTrip_withoutPassword() {
+        val dto = UpdateUserRequest(displayName = "Mario Rossi")
+        assertEquals(dto, json.decodeFromString<UpdateUserRequest>(json.encodeToString(dto)))
+        assertEquals("""{"displayName":"Mario Rossi"}""", json.encodeToString(dto))
+    }
+
+    @Test
+    fun updateUserRequest_roundTrip_withPassword() {
+        val dto = UpdateUserRequest(displayName = "Mario Rossi", password = "nuovapassword")
+        assertEquals(dto, json.decodeFromString<UpdateUserRequest>(json.encodeToString(dto)))
+    }
+
+    @Test
+    fun updateUserRequest_roundTrip_nullDisplayNameClearsIt() {
+        val dto = UpdateUserRequest(displayName = null)
+        assertEquals(dto, json.decodeFromString<UpdateUserRequest>(json.encodeToString(dto)))
+    }
 }

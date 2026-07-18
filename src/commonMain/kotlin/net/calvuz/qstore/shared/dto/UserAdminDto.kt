@@ -20,3 +20,13 @@ data class UserDto(
     val email: String,
     val displayName: String?
 )
+
+// Modifica utente (PUT /users/{id}) — email deliberatamente esclusa: è la chiave
+// usata per il login e per l'invito via POST /memberships, resta congelata (stessa
+// scelta già fatta in QReport per lo username). displayName è sempre inviato
+// (anche vuoto, per poterlo cancellare); password è opzionale, null = non cambiarla.
+@Serializable
+data class UpdateUserRequest(
+    val displayName: String?,
+    val password: String? = null
+)
