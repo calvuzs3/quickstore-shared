@@ -19,6 +19,7 @@ class ArticleListDtoTest {
     private fun sampleSummary() = ArticleSummaryDto(
         id = "art-1",
         name = "Bullone M6",
+        description = "Bullone esagonale zincato",
         categoryId = "cat-1",
         categoryName = "Viti",
         unitOfMeasure = "pz",
@@ -26,6 +27,7 @@ class ArticleListDtoTest {
         codeErp = "ERP1",
         codeBm = "BM1",
         reorderLevel = 10.0,
+        notes = "Fornitore preferito: Bossard",
         totalQuantity = 25.0
     )
 
@@ -38,7 +40,7 @@ class ArticleListDtoTest {
     @Test
     fun articleSummaryDto_jsonShape() {
         val dto = sampleSummary()
-        val expected = """{"id":"art-1","name":"Bullone M6","categoryId":"cat-1","categoryName":"Viti","unitOfMeasure":"pz","codeOem":"OEM1","codeErp":"ERP1","codeBm":"BM1","reorderLevel":10.0,"totalQuantity":25.0}"""
+        val expected = """{"id":"art-1","name":"Bullone M6","description":"Bullone esagonale zincato","categoryId":"cat-1","categoryName":"Viti","unitOfMeasure":"pz","codeOem":"OEM1","codeErp":"ERP1","codeBm":"BM1","reorderLevel":10.0,"notes":"Fornitore preferito: Bossard","totalQuantity":25.0}"""
         assertEquals(expected, json.encodeToString(dto))
     }
 
@@ -61,7 +63,7 @@ class ArticleListDtoTest {
         // questo modulo condiviso, questo test smette di decodificare correttamente.
         val golden = """
             {
-              "items": [{"id":"art-1","name":"Bullone M6","categoryId":"cat-1","categoryName":"Viti","unitOfMeasure":"pz","codeOem":"OEM1","codeErp":"ERP1","codeBm":"BM1","reorderLevel":10.0,"totalQuantity":25.0}],
+              "items": [{"id":"art-1","name":"Bullone M6","description":"","categoryId":"cat-1","categoryName":"Viti","unitOfMeasure":"pz","codeOem":"OEM1","codeErp":"ERP1","codeBm":"BM1","reorderLevel":10.0,"notes":"","totalQuantity":25.0}],
               "total": 1
             }
         """.trimIndent()
@@ -69,5 +71,36 @@ class ArticleListDtoTest {
         assertEquals(1, decoded.total)
         assertEquals("Viti", decoded.items.single().categoryName)
         assertEquals(25.0, decoded.items.single().totalQuantity)
+    }
+
+    @Test
+    fun createArticleRequest_roundTrip_withDefaults() {
+        // Json di default non incoda i valori uguali al default (encodeDefaults=false,
+        // stesso comportamento già visto in SyncDtoTest per SyncPushRequest) — qui
+        // solo i tre campi obbligatori compaiono nel JSON.
+        val dto = CreateArticleRequest(name = "Bullone M6", categoryId = "cat-1", unitOfMeasure = "pz")
+        assertEquals(dto, json.decodeFromString<CreateArticleRequest>(json.encodeToString(dto)))
+        assertEquals(
+            """{"name":"Bullone M6","categoryId":"cat-1","unitOfMeasure":"pz"}""",
+            json.encodeToString(dto)
+        )
+    }
+
+    @Test
+    fun createArticleRequest_roundTrip_fullyPopulated() {
+        val dto = CreateArticleRequest(
+            name = "Bullone M6", description = "desc", categoryId = "cat-1", unitOfMeasure = "pz",
+            reorderLevel = 10.0, notes = "note", codeOem = "OEM1", codeErp = "ERP1", codeBm = "BM1"
+        )
+        assertEquals(dto, json.decodeFromString<CreateArticleRequest>(json.encodeToString(dto)))
+    }
+
+    @Test
+    fun updateArticleRequest_roundTrip() {
+        val dto = UpdateArticleRequest(
+            name = "Bullone M6", description = "desc", categoryId = "cat-1", unitOfMeasure = "pz",
+            reorderLevel = 10.0, notes = "note", codeOem = "OEM1", codeErp = "ERP1", codeBm = "BM1"
+        )
+        assertEquals(dto, json.decodeFromString<UpdateArticleRequest>(json.encodeToString(dto)))
     }
 }
