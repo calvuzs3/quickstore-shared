@@ -45,6 +45,30 @@ class ArticleListDtoTest {
     }
 
     @Test
+    fun articleSummaryDto_stockByLocation_omittedWhenEmpty() {
+        // encodeDefaults=false (Json di default): una lista vuota è il default del
+        // campo, quindi non compare nel JSON — la vecchia forma resta compatibile.
+        val dto = sampleSummary()
+        assertEquals(
+            """{"id":"art-1","name":"Bullone M6","description":"Bullone esagonale zincato","categoryId":"cat-1","categoryName":"Viti","unitOfMeasure":"pz","codeOem":"OEM1","codeErp":"ERP1","codeBm":"BM1","reorderLevel":10.0,"notes":"Fornitore preferito: Bossard","totalQuantity":25.0}""",
+            json.encodeToString(dto)
+        )
+    }
+
+    @Test
+    fun articleSummaryDto_stockByLocation_roundTrip() {
+        val dto = sampleSummary().copy(
+            stockByLocation = listOf(
+                ArticleLocationStockDto(locationId = "loc-1", locationName = "Sede", quantity = 15.0),
+                ArticleLocationStockDto(locationId = "loc-2", locationName = "Furgone", quantity = 10.0)
+            )
+        )
+        val decoded = json.decodeFromString<ArticleSummaryDto>(json.encodeToString(dto))
+        assertEquals(dto, decoded)
+        assertEquals(25.0, decoded.stockByLocation.sumOf { it.quantity })
+    }
+
+    @Test
     fun articleListResponse_roundTrip_empty() {
         val dto = ArticleListResponse(items = emptyList(), total = 0)
         assertEquals(dto, json.decodeFromString<ArticleListResponse>(json.encodeToString(dto)))

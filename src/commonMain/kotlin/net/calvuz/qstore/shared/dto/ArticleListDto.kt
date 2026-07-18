@@ -8,6 +8,16 @@ import kotlinx.serialization.Serializable
 // totalQuantity è calcolato dal server aggregando movements (nessuna tabella
 // inventory lato server, vedi quickstore-server CLAUDE.md).
 
+// Riga di giacenza per singola ubicazione — locationName denormalizzato per lo stesso
+// motivo di categoryName sopra. Solo le ubicazioni con quantità netta diversa da zero
+// compaiono qui (una TRANSFER interna che si annulla non genera una riga a 0).
+@Serializable
+data class ArticleLocationStockDto(
+    val locationId: String,
+    val locationName: String,
+    val quantity: Double
+)
+
 @Serializable
 data class ArticleSummaryDto(
     val id: String,
@@ -21,7 +31,11 @@ data class ArticleSummaryDto(
     val codeBm: String,
     val reorderLevel: Double,
     val notes: String,
-    val totalQuantity: Double
+    val totalQuantity: Double,
+    // Se GET /articles è filtrato per locationId, totalQuantity è la giacenza in quella
+    // sola ubicazione (non il totale su tutte); stockByLocation resta comunque la
+    // ripartizione completa per ogni ubicazione con giacenza diversa da zero.
+    val stockByLocation: List<ArticleLocationStockDto> = emptyList()
 )
 
 @Serializable
