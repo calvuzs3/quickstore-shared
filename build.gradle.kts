@@ -7,7 +7,7 @@ plugins {
 }
 
 group = "net.calvuz"
-version = "0.1.8"
+version = "0.1.9"
 
 kotlin {
     jvm {
